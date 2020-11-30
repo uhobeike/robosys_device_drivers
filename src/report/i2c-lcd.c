@@ -6,7 +6,7 @@
 #include <linux/slab.h> 
 #include <linux/i2c.h> 
 #include <linux/string.h>
-#include "i2c_lcd.h"
+#include "i2c-lcd.h"
 
 #define LCD_I2C_ADDR	0x3e
 #define LCD_OSC_FREQ	0x04
@@ -67,7 +67,7 @@ static int lcd_row1_store( struct device *dev, struct device_attribute *attr, co
 	
 	return size;
 }
-static DEVICE_ATTR(lcd_row1, S_IWUSR|S_IWGRP|S_IWOTH , NULL, lcd_row1_store );
+static DEVICE_ATTR(lcd_row1, S_IWUSR|S_IWGRP , NULL, lcd_row1_store );
 
 static int lcd_row2_store( struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
 {
@@ -83,7 +83,7 @@ static int lcd_row2_store( struct device *dev, struct device_attribute *attr, co
 	
 	return size;
 }
-static DEVICE_ATTR(lcd_row2, S_IWUSR|S_IWGRP|S_IWOTH , NULL, lcd_row2_store );
+static DEVICE_ATTR(lcd_row2, S_IWUSR|S_IWGRP , NULL, lcd_row2_store );
 
 static int lcd_clear_store( struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -94,7 +94,7 @@ static int lcd_clear_store( struct device *dev, struct device_attribute *attr, c
 	
 	return size;
 }
-static DEVICE_ATTR(lcd_clear, S_IWUSR|S_IWGRP|S_IWOTH, NULL, lcd_clear_store );
+static DEVICE_ATTR(lcd_clear, S_IWUSR|S_IWGRP , NULL, lcd_clear_store );
 
 static int i2c_lcd_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
@@ -192,8 +192,6 @@ static struct i2c_driver i2c_lcd_driver = {
 	.probe    = i2c_lcd_probe,
 	.remove   = i2c_lcd_remove,
 	.id_table = i2c_lcd_id,
-	.suspend  = i2c_lcd_suspend,
-	.resume   = i2c_lcd_resume,
 	.address_list = i2c_lcd_addr,
 	.driver   = {
 		.owner = THIS_MODULE,
