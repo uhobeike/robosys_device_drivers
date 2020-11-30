@@ -1,0 +1,1 @@
+cmd_/home/ubuntu/robosys_device_drivers/src/report/3_led.ko := ld -r  -EL -T ./scripts/module-common.lds --build-id  -o /home/ubuntu/robosys_device_drivers/src/report/3_led.ko /home/ubuntu/robosys_device_drivers/src/report/3_led.o /home/ubuntu/robosys_device_drivers/src/report/3_led.mod.o ;  true
