@@ -15,7 +15,7 @@
 MODULE_AUTHOR("Tatsuhiro Ikebe");
 MODULE_DESCRIPTION("driver for 3_LED control");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("0.0.2");
+MODULE_VERSION("0.1.0");
 
 static dev_t dev;
 static struct cdev cdv;
@@ -27,6 +27,8 @@ static struct class *cls = NULL;
 #define MCP320X_DIFF		0
 #define MCP320X_SINGLE		1
 #define MCP3204_CHANNELS	4
+
+#define MAX_BUFLEN 64
 
 int ch_show_data = 0;
 
@@ -91,26 +93,6 @@ static unsigned int mcp3204_get_value( int channel )
 	return r;
 }
 
-static int ch_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	struct mcp3204_drvdata *data = (struct mcp3204_drvdata *)dev_get_drvdata(dev);
-	int c = attr->attr.name[2] - 0x30;
-	int v = 0;
-	
-	if( (c > -1) && (c < MCP3204_CHANNELS) ) {
-		v = mcp3204_get_value(c);
-	}
-
-	ch_show_data = v;
-
-	return snprintf (buf, 50, "%d\n", v);
-}
-
-//static DEVICE_ATTR(ch0, S_IRUSR|S_IRGRP|S_IROTH, ch_show,NULL );
-//static DEVICE_ATTR(ch1, S_IRUSR|S_IRGRP|S_IROTH, ch_show,NULL );
-//static DEVICE_ATTR(ch2, S_IRUSR|S_IRGRP|S_IROTH, ch_show,NULL );
-//static DEVICE_ATTR(ch3, S_IRUSR|S_IRGRP|S_IROTH, ch_show,NULL );
-
 static int mcp3204_probe(struct spi_device *spi)
 {
 	struct mcp3204_drvdata *data;
@@ -145,24 +127,7 @@ static int mcp3204_probe(struct spi_device *spi)
 	spi_message_init_with_transfers( &data->msg, &data->xfer, 1 );
 	
 	spi_set_drvdata( spi, data );
-	/*
-	ret = device_create_file( &spi->dev, &dev_attr_ch0 );
-	if(ret) {
-		printk(KERN_ERR "failed to add ch0 attribute\n" );
-	}	
-	ret = device_create_file( &spi->dev, &dev_attr_ch1 );
-	if(ret) {
-		printk(KERN_ERR "failed to add ch1 attribute\n" );
-	}	
-	ret = device_create_file( &spi->dev, &dev_attr_ch2 );
-	if(ret) {
-		printk(KERN_ERR "failed to add ch2 attribute\n" );
-	}	
-	ret = device_create_file( &spi->dev, &dev_attr_ch3 );
-	if(ret) {
-		printk(KERN_ERR "failed to add ch3 attribute\n" );
-	}	
-*/
+
 	return 0;
 }
 
@@ -170,12 +135,7 @@ static int mcp3204_remove(struct spi_device *spi)
 {
 	struct mcp3204_drvdata *data;
 	data = (struct mcp3204_drvdata *)spi_get_drvdata(spi);
-	/*
-	device_remove_file( &spi->dev, &dev_attr_ch0 );
-	device_remove_file( &spi->dev, &dev_attr_ch1 );
-	device_remove_file( &spi->dev, &dev_attr_ch2 );
-	device_remove_file( &spi->dev, &dev_attr_ch3 );
-	*/
+
 	kfree(data);
 	printk(KERN_INFO "mcp3204 removed\n");
 	
@@ -216,15 +176,19 @@ static void spi_remove_device(struct spi_master *master, unsigned int cs)
 
 static ssize_t analog_read(struct file* filp, char* buf, size_t count, loff_t* pos)
 {
-	int size = 0;
-	char c[] = {'s',0x0A};
+	unsigned char rw_buf[MAX_BUFLEN];
+
+	snprintf(rw_buf, sizeof(rw_buf), "%d\n", mcp3204_get_value(0));
+	
 	printk(KERN_INFO "%d",mcp3204_get_value(0));
-	if(copy_to_user(buf+size, (const char *)c, sizeof(c))){
+
+	if(copy_to_user((void *)buf, &rw_buf, strlen(rw_buf))){
 		return -EFAULT;
 	}
 
-	size += sizeof(c);
-	return size;
+	*pos += strlen(rw_buf);
+
+	return strlen(rw_buf);
 }
 
 static struct file_operations analog_sensor_fops = {
