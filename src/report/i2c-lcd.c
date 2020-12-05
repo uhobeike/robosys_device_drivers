@@ -1,3 +1,4 @@
+#include <linux/init.h>
 #include <linux/delay.h> 
 #include <linux/device.h>
 #include <linux/kernel.h> 
@@ -8,10 +9,14 @@
 #include <linux/string.h>
 #include "i2c-lcd.h"
 
+
 #define LCD_I2C_ADDR	0x3e
 #define LCD_OSC_FREQ	0x04
 #define LCD_AMP_RATIO	0x02
 #define LCD_COLS	8
+
+MODULE_DESCRIPTION("I2C LCD driver");
+MODULE_LICENSE("GPL");
 
 struct i2c_lcd_device {
         struct i2c_client *client;
@@ -20,8 +25,7 @@ struct i2c_lcd_device {
 static int contrast = 56;
 
 static const struct i2c_device_id i2c_lcd_id[] = {
-        { "i2c_lcd", 0 },
-        { }
+        { "i2c_lcd", 0 },{}
 };
 MODULE_DEVICE_TABLE(i2c, i2c_lcd_id);
 
@@ -182,6 +186,7 @@ static int i2c_lcd_remove(struct i2c_client *client)
 	
 	dev = (struct i2c_lcd_device *)i2c_get_clientdata(client);
 	kfree(dev);
+
 	return 0;
 }
 
@@ -199,8 +204,16 @@ static struct i2c_driver i2c_lcd_driver = {
 	},
 };
 
-module_i2c_driver(i2c_lcd_driver);
+static int init_mod(void)
+{
+	i2c_add_driver(&i2c_lcd_driver);
+	return 0;
+}
 
-MODULE_DESCRIPTION("I2C LCD driver");
-MODULE_LICENSE("GPL");
+static void cleanup_mod(void)
+{
+	printk(KERN_INFO "ds");
+}
 
+module_init(init_mod);
+module_exit(cleanup_mod);
