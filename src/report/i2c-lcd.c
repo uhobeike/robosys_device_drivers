@@ -414,33 +414,33 @@ static void cleanup_mod(void)
 {
     i2c_del_driver(&i2c_lcd_driver);
 
-	int i;
-	dev_t devno;
-	dev_t devno_top;
+    int i;
+    dev_t devno;
+    dev_t devno_top;
 
-	/* --- remove char device --- */
-	for (i = 0; i < NUM_DEV_TOTAL; i++) {
-		cdev_del(&(cdev_array[i]));
-	}
+    /* --- remove char device --- */
+    for (i = 0; i < NUM_DEV_TOTAL; i++) {
+        cdev_del(&(cdev_array[i]));
+    }
 
     /* /dev/lcd_row_10*/
-	devno = MKDEV(_major_lcd_row_10 _minor_lcd_row_10);
-	device_destroy(class_lcd, devno);
-	unregister_chrdev_region(devno, NUM_DEV_LCD);
+    devno = MKDEV(_major_lcd_row_10 _minor_lcd_row_10);
+    device_destroy(class_lcd, devno);
+    unregister_chrdev_region(devno, NUM_DEV_LCD);
 
 
     /* /dev/lcd_row_20*/
-	devno = MKDEV(_major_lcd_row_20, _minor_lcd);
-	device_destroy(class_lcd_row_20, devno);
-	unregister_chrdev_region(devno, NUM_DEV_LCD);
+    devno = MKDEV(_major_lcd_row_20, _minor_lcd);
+    device_destroy(class_lcd_row_20, devno);
+    unregister_chrdev_region(devno, NUM_DEV_LCD);
 
     /* /dev/lcd_row_clear*/
-	devno = MKDEV(_major_lcd_clear, _minor_lcd);
-	device_destroy(class_lcd_clear, devno);
-	unregister_chrdev_region(devno, NUM_DEV_LCD);
+    devno = MKDEV(_major_lcd_clear, _minor_lcd);
+    device_destroy(class_lcd_clear, devno);
+    unregister_chrdev_region(devno, NUM_DEV_LCD);
 
     /* --- remove device node --- */
-	class_destroy(class_lcd_row_10);
+    class_destroy(class_lcd_row_10);
     class_destroy(class_lcd_row_20);
     class_destroy(class_lcd_clear);
 
