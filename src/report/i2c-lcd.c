@@ -396,7 +396,7 @@ static int init_mod(void)
                DRIVER_NAME);
         return retval;
     }
-    
+
     retval = lcd_register_dev();
     if (retval != 0) {
         printk(KERN_ALERT "%s: lcd register failed.\n",
@@ -429,12 +429,12 @@ static void cleanup_mod(void)
 	unregister_chrdev_region(devno, NUM_DEV_LCD);
 
 
-        /* /dev/lcd_row_20*/
+    /* /dev/lcd_row_20*/
 	devno = MKDEV(_major_lcd_row_20, _minor_lcd);
 	device_destroy(class_lcd_row_20, devno);
 	unregister_chrdev_region(devno, NUM_DEV_LCD);
 
-        /* /dev/lcd_row_clear*/
+    /* /dev/lcd_row_clear*/
 	devno = MKDEV(_major_lcd_clear, _minor_lcd);
 	device_destroy(class_lcd_clear, devno);
 	unregister_chrdev_region(devno, NUM_DEV_LCD);
