@@ -15,34 +15,48 @@
 #include <linux/uaccess.h>
 #include <linux/io.h>
 
-MODULE_DESCRIPTION("I2C LCD driver");
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/mutex.h>
+#include <linux/spi/spi.h>
+#include <linux/slab.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+
+MODULE_AUTHOR("Tatsuhiro Ikebe");
+MODULE_DESCRIPTION("driver for 3_LED control");
 MODULE_LICENSE("GPL");
+MODULE_VERSION("0.1.0");
 
 #define DRIVER_NAME "3_LED"
 
-#define NUM_DEV_TOTAL  3
-#define NUM_DEV_LCD 1
+#define NUM_DEV_TOTAL   4
+#define NUM_DEV_LCD     1 //(3)
+#define NUM_DEV_ADC     1
+
 #define DEV_MAJOR 0
 #define DEV_MINOR 0
 
-#define DEVNAME_LCD_10 "lcd_row1"
-#define DEVNAME_LCD_20 "lcd_row2"
-#define DEVNAME_LCD_CLEAR "lcd_clear"
+#define DEVNAME_LCD_10      "lcd_row1"
+#define DEVNAME_LCD_20      "lcd_row2"
+#define DEVNAME_LCD_CLEAR   "lcd_clear"
+#define DEVNAME_ADC         "analog_read"
 
 static int _major_lcd_row_10 = DEV_MAJOR;
 static int _minor_lcd_row_10 = DEV_MINOR;
-
 static int _major_lcd_row_20 = DEV_MAJOR;
 static int _minor_lcd_row_20 = DEV_MINOR;
-
 static int _major_lcd_clear = DEV_MAJOR;
 static int _minor_lcd_clear = DEV_MINOR;
+static int _major_adc = DEV_MAJOR;
+static int _minor_adc = DEV_MINOR;
 
 static dev_t dev;
 static struct cdev *cdev_array = NULL;
 static struct class *class_lcd_row_10 = NULL;
 static struct class *class_lcd_row_20 = NULL;
 static struct class *class_lcd_clear = NULL;
+static struct class *class_adc = NULL;
 
 static volatile int cdev_index = 0;
 
@@ -50,6 +64,15 @@ static volatile int cdev_index = 0;
 #define LCD_OSC_FREQ    0x04
 #define LCD_AMP_RATIO   0x02
 #define LCD_COLS    8
+
+#define MCP320X_PACKET_SIZE	3
+#define MCP320X_DIFF		0
+#define MCP320X_SINGLE		1
+#define MCP3204_CHANNELS	4
+
+#define MAX_BUFLEN 64
+
+int ch_show_data = 0;
 
 struct i2c_lcd_device {
         struct i2c_client *client;
@@ -244,6 +267,214 @@ static struct i2c_driver i2c_lcd_driver = {
     },
 };
 
+static struct spi_board_info mcp3204_info = {
+	.modalias = "mcp3204",
+	.max_speed_hz = 1000000,
+	.bus_num = 0,
+	.chip_select = 0,
+	.mode = SPI_MODE_3,
+};
+
+struct mcp3204_drvdata {
+	struct spi_device *spi;
+	struct mutex lock;
+	unsigned char tx[MCP320X_PACKET_SIZE]  ____cacheline_aligned;
+	unsigned char rx[MCP320X_PACKET_SIZE]  ____cacheline_aligned;
+	struct spi_transfer xfer ____cacheline_aligned;
+	struct spi_message msg ____cacheline_aligned;
+};
+
+/* パラメータでバス番号とCSを指定できるようにする */
+static int spi_bus_num     = 0;
+static int spi_chip_select = 0;
+module_param( spi_bus_num, int, S_IRUSR | S_IRGRP | S_IROTH |  S_IWUSR );
+module_param( spi_chip_select, int, S_IRUSR | S_IRGRP | S_IROTH |  S_IWUSR );
+
+
+static unsigned int mcp3204_get_value( int channel )
+{
+
+	struct device *dev;
+	struct mcp3204_drvdata *data;
+	struct spi_device *spi;
+	char str[128];
+	struct spi_master *master;
+
+	unsigned int r = 0;
+	unsigned char c = channel & 0x03;
+
+	master = spi_busnum_to_master(mcp3204_info.bus_num);
+	snprintf(str, sizeof(str), "%s.%u", dev_name(&master->dev),
+		 mcp3204_info.chip_select);
+
+	dev = bus_find_device_by_name(&spi_bus_type, NULL, str);
+	spi = to_spi_device(dev);
+	data = (struct mcp3204_drvdata *)spi_get_drvdata(spi);
+	
+	mutex_lock( &data->lock );
+	data->tx[0] = 1 << 2;		// スタートビット
+	data->tx[0] |= 1 << 1;		// Single
+	data->tx[1] = c << 6;		// チャンネル
+	data->tx[2] = 0;
+	
+	if( spi_sync( data->spi, &data->msg) ) { 
+		printk(KERN_INFO "spi_sync_transfer returned non zero\n" );
+	}
+	mutex_unlock(&data->lock);
+	
+	r =  (data->rx[1] & 0x0F) << 8;
+	r |= data->rx[2];
+	
+	return r;
+}
+
+static int mcp3204_probe(struct spi_device *spi)
+{
+	struct mcp3204_drvdata *data;
+	int ret;
+	
+	printk(KERN_INFO "mcp3204 probe\n");
+	
+	/* SPIを設定する */
+	spi->max_speed_hz = mcp3204_info.max_speed_hz;
+	spi->mode = mcp3204_info.mode;
+	spi->bits_per_word = 8;
+	if( spi_setup( spi ) ) {
+		printk(KERN_ERR "spi_setup returned error\n");
+		return -ENODEV;
+	}
+	
+	data = kzalloc( sizeof(struct mcp3204_drvdata), GFP_KERNEL );
+	if(data == NULL ) {
+		printk(KERN_ERR "%s: no memory\n", __func__ );
+		return -ENODEV;
+	}
+	data->spi = spi;
+	mutex_init( &data->lock );
+	
+	data->xfer.tx_buf = data->tx;
+	data->xfer.rx_buf = data->rx;
+	data->xfer.bits_per_word = 8;
+	data->xfer.len = MCP320X_PACKET_SIZE;
+	data->xfer.cs_change = 0;
+	data->xfer.delay_usecs = 0;
+	data->xfer.speed_hz = 1000000;
+	spi_message_init_with_transfers( &data->msg, &data->xfer, 1 );
+	
+	spi_set_drvdata( spi, data );
+
+	return 0;
+}
+
+static int mcp3204_remove(struct spi_device *spi)
+{
+	struct mcp3204_drvdata *data;
+	data = (struct mcp3204_drvdata *)spi_get_drvdata(spi);
+
+	kfree(data);
+	printk(KERN_INFO "mcp3204 removed\n");
+	
+	return 0;
+}
+
+static struct spi_device_id mcp3204_id[] = {
+	{ "mcp3204", 0 },
+	{ },
+};
+MODULE_DEVICE_TABLE(spi, mcp3204_id);
+
+static struct spi_driver mcp3204_driver = {
+	.driver = {
+		.name	= DRIVER_NAME,
+		.owner	= THIS_MODULE,
+	},
+	.id_table = mcp3204_id,
+	.probe	= mcp3204_probe,
+	.remove	= mcp3204_remove,
+};
+
+
+static void spi_remove_device(struct spi_master *master, unsigned int cs)
+{
+   struct device *dev;
+   char str[128];
+
+	snprintf(str, sizeof(str), "%s.%u", dev_name(&master->dev), cs);
+	// SPIデバイスを探す
+	dev = bus_find_device_by_name(&spi_bus_type, NULL, str);
+	// あったら削除
+	if( dev ){
+		printk(KERN_INFO "Delete %s\n", str);
+		device_del(dev);
+	}
+}
+
+static ssize_t analog_read(struct file* filp, char* buf, size_t count, loff_t* pos)
+{
+	unsigned char rw_buf[MAX_BUFLEN];
+
+	snprintf(rw_buf, sizeof(rw_buf), "%d\n", mcp3204_get_value(0));
+	
+	printk(KERN_INFO "%d",mcp3204_get_value(0));
+
+	if(copy_to_user((void *)buf, &rw_buf, strlen(rw_buf))){
+		return -EFAULT;
+	}
+
+	*pos += strlen(rw_buf);
+
+	return strlen(rw_buf);
+}
+
+static struct file_operations adc_fops = {
+	.owner = THIS_MODULE,
+	.read = analog_read
+};
+
+static int init_mcp(void)
+{
+	struct spi_master *master;
+	struct spi_device *spi_device;
+	
+	spi_register_driver(&mcp3204_driver);
+	
+	mcp3204_info.bus_num = spi_bus_num;
+	mcp3204_info.chip_select = spi_chip_select;
+	master = spi_busnum_to_master(mcp3204_info.bus_num);
+	if( ! master ) {
+		printk( KERN_ERR "spi_busnum_to_master returned NULL\n");
+		spi_unregister_driver(&mcp3204_driver);
+		return -ENODEV;
+	}
+	
+	/* 初期状態でspidev0.0が専有しているので必ず取り除く */
+	spi_remove_device(master, mcp3204_info.chip_select);
+	
+	spi_device = spi_new_device( master, &mcp3204_info );
+	if( !spi_device ) {
+		printk(KERN_ERR "spi_new_device returned NULL\n" );
+		spi_unregister_driver(&mcp3204_driver);
+		return -ENODEV;
+	}
+    printk(KERN_INFO "uho_4");
+
+    return 0;
+}
+
+static void exit_mcp(void)
+{
+	struct spi_master *master;
+
+	master = spi_busnum_to_master(mcp3204_info.bus_num);
+	if( master ) {
+		spi_remove_device(master, mcp3204_info.chip_select );
+	}
+	else {
+		printk( KERN_INFO "mcp3204 remove error\n");
+	}
+	spi_unregister_driver(&mcp3204_driver);
+}
+
 static int lcd_write_10_register_dev(void)
 {
     int retval;
@@ -373,10 +604,55 @@ static int lcd_clear_register_dev(void)
     return 0;
 }
 
+static int adc_register_dev(void)
+{
+    int retval;
+    dev_t dev;
+    dev_t devno;
+
+    /* 空いているメジャー番号を使ってメジャー
+        &マイナー番号をカーネルに登録する */
+    retval = alloc_chrdev_region(&dev, /* 結果を格納するdev_t構造体 */
+                     DEV_MINOR, /* ベースマイナー番号 */
+                     NUM_DEV_ADC, /* デバイスの数 */
+                     DEVNAME_ADC /* デバイスドライバの名前 */
+                     );
+
+    if (retval < 0) {
+        printk(KERN_ERR "alloc_chrdev_region failed.\n");
+        return retval;
+    }
+    _major_adc = MAJOR(dev);
+
+    /* デバイスクラスを作成する */
+    class_adc = class_create(THIS_MODULE, DEVNAME_ADC);
+    if (IS_ERR(class_adc)) {
+        return PTR_ERR(class_adc);
+    }
+
+    devno = MKDEV(_major_adc, _minor_adc);
+    /* キャラクタデバイスとしてこのモジュールをカーネルに登録する */
+    cdev_init(&(cdev_array[cdev_index]), &adc_fops);
+    cdev_array[cdev_index].owner = THIS_MODULE;
+    if (cdev_add(&(cdev_array[cdev_index]), devno, 1) < 0) {
+        /* 登録に失敗した */
+        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_adc);
+    } else {
+        /* デバイスノードの作成 */
+        device_create(class_adc, NULL, devno, NULL, DEVNAME_ADC "%u", _minor_adc);
+    }
+
+    cdev_index++;
+
+    return 0;
+}
 
 static int init_mod(void)
 {
+    printk(KERN_INFO "uho_1");
     i2c_add_driver(&i2c_lcd_driver);
+    init_mcp();
+    printk(KERN_INFO "uho_2");
 
     int retval;
     size_t size;
@@ -386,25 +662,33 @@ static int init_mod(void)
     
     retval = lcd_write_10_register_dev();
     if (retval != 0) {
-        printk(KERN_ALERT "%s: lcd register failed1111.\n",
+        printk(KERN_ALERT "%s: lcd register failed.\n",
                DRIVER_NAME);
         return retval;
     }
 
     retval = lcd_write_20_register_dev();
     if (retval != 0) {
-        printk(KERN_ALERT "%s: lcd register failed1111.\n",
+        printk(KERN_ALERT "%s: lcd register failed.\n",
                DRIVER_NAME);
         return retval;
     }
 
     retval = lcd_clear_register_dev();
     if (retval != 0) {
-        printk(KERN_ALERT "%s: lcd register failed1111.\n",
+        printk(KERN_ALERT "%s: lcd register failed.\n",
                DRIVER_NAME);
         return retval;
     }
+    printk(KERN_INFO "uho_3");
 
+    retval = adc_register_dev();
+    if (retval != 0) {
+        printk(KERN_ALERT "%s: lcd register failed.\n",
+               DRIVER_NAME);
+        return retval;
+    }
+    printk(KERN_INFO "uho_5");
     printk(KERN_INFO "%s is loaded. major:%d\n",__FILE__,MAJOR(dev));
 
     return 0;
@@ -412,6 +696,9 @@ static int init_mod(void)
 
 static void cleanup_mod(void)
 {
+    exit_mcp();
+    i2c_del_driver(&i2c_lcd_driver);
+
     int i;
     dev_t devno;
     //dev_t devno_top;
@@ -426,27 +713,30 @@ static void cleanup_mod(void)
     device_destroy(class_lcd_row_10, devno);
     unregister_chrdev_region(devno, NUM_DEV_LCD);
 
-
     /* /dev/lcd_row_20*/
     devno = MKDEV(_major_lcd_row_20, _minor_lcd_row_20);
     device_destroy(class_lcd_row_20, devno);
     unregister_chrdev_region(devno, NUM_DEV_LCD);
 
-    /* /dev/lcd_clear*/
+    /* /dev/lcd_clear0*/
     devno = MKDEV(_major_lcd_clear, _minor_lcd_clear);
     device_destroy(class_lcd_clear, devno);
     unregister_chrdev_region(devno, NUM_DEV_LCD);
+
+    /* /dev/analog_read0*/
+    devno = MKDEV(_major_adc, _minor_adc);
+    device_destroy(class_adc, devno);
+    unregister_chrdev_region(devno, NUM_DEV_ADC);
 
     /* --- remove device node --- */
     class_destroy(class_lcd_row_10);
     class_destroy(class_lcd_row_20);
     class_destroy(class_lcd_clear);
-
-    i2c_del_driver(&i2c_lcd_driver);
+    class_destroy(class_adc);
 
     kfree(cdev_array);
 
-    printk(KERN_INFO "3");
+    printk(KERN_INFO "exit");
 }
 
 module_init(init_mod);
