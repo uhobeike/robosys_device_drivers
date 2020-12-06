@@ -25,8 +25,9 @@ MODULE_LICENSE("GPL");
 #define DEV_MAJOR 0
 #define DEV_MINOR 0
 
-#define DEVNAME_LCD_1 "lcd_row1"
-#define DEVNAME_LCD_2 "lcd_row2"
+#define DEVNAME_LCD_10 "lcd_row1"
+#define DEVNAME_LCD_20 "lcd_row2"
+#define DEVNAME_LCD_CLEAR "lcd_clear"
 
 static int _major_lcd_row_10 = DEV_MAJOR;
 static int _minor_lcd_row_10 = DEV_MINOR;
@@ -243,7 +244,7 @@ static struct i2c_driver i2c_lcd_driver = {
     },
 };
 
-static int lcd_write_1_register_dev(void)
+static int lcd_write_10_register_dev(void)
 {
     int retval;
     dev_t dev;
@@ -254,31 +255,31 @@ static int lcd_write_1_register_dev(void)
     retval = alloc_chrdev_region(&dev, /* 結果を格納するdev_t構造体 */
                      DEV_MINOR, /* ベースマイナー番号 */
                      NUM_DEV_LCD, /* デバイスの数 */
-                     DEVNAME_LCD_1 /* デバイスドライバの名前 */
+                     DEVNAME_LCD_10 /* デバイスドライバの名前 */
                      );
 
     if (retval < 0) {
         printk(KERN_ERR "alloc_chrdev_region failed.\n");
         return retval;
     }
-    _major_lcd = MAJOR(dev);
+    _major_lcd_row_10 = MAJOR(dev);
 
     /* デバイスクラスを作成する */
-    class_lcd = class_create(THIS_MODULE, DEVNAME_LCD_1);
-    if (IS_ERR(class_lcd)) {
-        return PTR_ERR(class_lcd);
+    class_lcd_row_10 = class_create(THIS_MODULE, DEVNAME_LCD_10);
+    if (IS_ERR(class_lcd_row_10)) {
+        return PTR_ERR(class_lcd_row_10);
     }
 
-    devno = MKDEV(_major_lcd, _minor_lcd);
+    devno = MKDEV(_major_lcd_row_10, _minor_lcd_row_10);
     /* キャラクタデバイスとしてこのモジュールをカーネルに登録する */
     cdev_init(&(cdev_array[cdev_index]), &lcd_fops);
     cdev_array[cdev_index].owner = THIS_MODULE;
     if (cdev_add(&(cdev_array[cdev_index]), devno, 1) < 0) {
         /* 登録に失敗した */
-        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_lcd);
+        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_lcd_row_10);
     } else {
         /* デバイスノードの作成 */
-        device_create(class_lcd, NULL, devno, NULL, DEVNAME_LCD_1 "%u", _minor_lcd);
+        device_create(class_lcd_row_10, NULL, devno, NULL, DEVNAME_LCD_10 "%u", _minor_lcd_row_10);
     }
 
     cdev_index++;
@@ -286,7 +287,7 @@ static int lcd_write_1_register_dev(void)
     return 0;
 }
 
-static int lcd_write_2_register_dev(void)
+static int lcd_write_20_register_dev(void)
 {
     int retval;
     dev_t dev;
@@ -297,37 +298,38 @@ static int lcd_write_2_register_dev(void)
     retval = alloc_chrdev_region(&dev, /* 結果を格納するdev_t構造体 */
                      DEV_MINOR, /* ベースマイナー番号 */
                      NUM_DEV_LCD, /* デバイスの数 */
-                     DEVNAME_LCD_1 /* デバイスドライバの名前 */
+                     DEVNAME_LCD_20 /* デバイスドライバの名前 */
                      );
 
     if (retval < 0) {
         printk(KERN_ERR "alloc_chrdev_region failed.\n");
         return retval;
     }
-    _major_lcd = MAJOR(dev);
+    _major_lcd_row_20 = MAJOR(dev);
 
     /* デバイスクラスを作成する */
-    class_lcd = class_create(THIS_MODULE, DEVNAME_LCD_1);
-    if (IS_ERR(class_lcd)) {
-        return PTR_ERR(class_lcd);
+    class_lcd_row_20 = class_create(THIS_MODULE, DEVNAME_LCD_20);
+    if (IS_ERR(class_lcd_row_20)) {
+        return PTR_ERR(class_lcd_row_20);
     }
 
-    devno = MKDEV(_major_lcd, _minor_lcd);
+    devno = MKDEV(_major_lcd_row_20, _minor_lcd_row_20);
     /* キャラクタデバイスとしてこのモジュールをカーネルに登録する */
     cdev_init(&(cdev_array[cdev_index]), &lcd_fops);
     cdev_array[cdev_index].owner = THIS_MODULE;
     if (cdev_add(&(cdev_array[cdev_index]), devno, 1) < 0) {
         /* 登録に失敗した */
-        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_lcd);
+        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_lcd_row_20);
     } else {
         /* デバイスノードの作成 */
-        device_create(class_lcd, NULL, devno, NULL, DEVNAME_LCD_1 "%u", _minor_lcd);
+        device_create(class_lcd_row_20, NULL, devno, NULL, DEVNAME_LCD_20 "%u", _minor_lcd_row_20);
     }
 
     cdev_index++;
 
     return 0;
 }
+
 static int lcd_clear_register_dev(void)
 {
     int retval;
@@ -339,31 +341,31 @@ static int lcd_clear_register_dev(void)
     retval = alloc_chrdev_region(&dev, /* 結果を格納するdev_t構造体 */
                      DEV_MINOR, /* ベースマイナー番号 */
                      NUM_DEV_LCD, /* デバイスの数 */
-                     DEVNAME_LCD_1 /* デバイスドライバの名前 */
+                     DEVNAME_LCD_CLEAR /* デバイスドライバの名前 */
                      );
 
     if (retval < 0) {
         printk(KERN_ERR "alloc_chrdev_region failed.\n");
         return retval;
     }
-    _major_lcd = MAJOR(dev);
+    _major_lcd_clear = MAJOR(dev);
 
     /* デバイスクラスを作成する */
-    class_lcd = class_create(THIS_MODULE, DEVNAME_LCD_1);
-    if (IS_ERR(class_lcd)) {
-        return PTR_ERR(class_lcd);
+    class_lcd_clear = class_create(THIS_MODULE, DEVNAME_LCD_CLEAR);
+    if (IS_ERR(class_lcd_clear)) {
+        return PTR_ERR(class_lcd_clear);
     }
 
-    devno = MKDEV(_major_lcd, _minor_lcd);
+    devno = MKDEV(_major_lcd_clear, _minor_lcd_clear);
     /* キャラクタデバイスとしてこのモジュールをカーネルに登録する */
     cdev_init(&(cdev_array[cdev_index]), &lcd_fops);
     cdev_array[cdev_index].owner = THIS_MODULE;
     if (cdev_add(&(cdev_array[cdev_index]), devno, 1) < 0) {
         /* 登録に失敗した */
-        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_lcd);
+        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_lcd_clear);
     } else {
         /* デバイスノードの作成 */
-        device_create(class_lcd, NULL, devno, NULL, DEVNAME_LCD_1 "%u", _minor_lcd);
+        device_create(class_lcd_clear, NULL, devno, NULL, DEVNAME_LCD_CLEAR "%u", _minor_lcd_clear);
     }
 
     cdev_index++;
@@ -371,39 +373,37 @@ static int lcd_clear_register_dev(void)
     return 0;
 }
 
+
 static int init_mod(void)
 {
-    printk(KERN_INFO "1");
     i2c_add_driver(&i2c_lcd_driver);
 
     int retval;
-    int registered_devices = 0;
     size_t size;
 
     size = sizeof(struct cdev) * NUM_DEV_TOTAL;
     cdev_array = (struct cdev *)kmalloc(size, GFP_KERNEL);
     
-    retval = lcd_register_dev();
+    retval = lcd_write_10_register_dev();
     if (retval != 0) {
-        printk(KERN_ALERT "%s: lcd register failed.\n",
+        printk(KERN_ALERT "%s: lcd register failed1111.\n",
                DRIVER_NAME);
         return retval;
     }
 
-    retval = lcd_register_dev();
+    retval = lcd_write_20_register_dev();
     if (retval != 0) {
-        printk(KERN_ALERT "%s: lcd register failed.\n",
+        printk(KERN_ALERT "%s: lcd register failed1111.\n",
                DRIVER_NAME);
         return retval;
     }
 
-    retval = lcd_register_dev();
+    retval = lcd_clear_register_dev();
     if (retval != 0) {
-        printk(KERN_ALERT "%s: lcd register failed.\n",
+        printk(KERN_ALERT "%s: lcd register failed1111.\n",
                DRIVER_NAME);
         return retval;
     }
-
 
     printk(KERN_INFO "%s is loaded. major:%d\n",__FILE__,MAJOR(dev));
 
@@ -412,11 +412,9 @@ static int init_mod(void)
 
 static void cleanup_mod(void)
 {
-    i2c_del_driver(&i2c_lcd_driver);
-
     int i;
     dev_t devno;
-    dev_t devno_top;
+    //dev_t devno_top;
 
     /* --- remove char device --- */
     for (i = 0; i < NUM_DEV_TOTAL; i++) {
@@ -424,18 +422,18 @@ static void cleanup_mod(void)
     }
 
     /* /dev/lcd_row_10*/
-    devno = MKDEV(_major_lcd_row_10 _minor_lcd_row_10);
-    device_destroy(class_lcd, devno);
+    devno = MKDEV(_major_lcd_row_10, _minor_lcd_row_10);
+    device_destroy(class_lcd_row_10, devno);
     unregister_chrdev_region(devno, NUM_DEV_LCD);
 
 
     /* /dev/lcd_row_20*/
-    devno = MKDEV(_major_lcd_row_20, _minor_lcd);
+    devno = MKDEV(_major_lcd_row_20, _minor_lcd_row_20);
     device_destroy(class_lcd_row_20, devno);
     unregister_chrdev_region(devno, NUM_DEV_LCD);
 
-    /* /dev/lcd_row_clear*/
-    devno = MKDEV(_major_lcd_clear, _minor_lcd);
+    /* /dev/lcd_clear*/
+    devno = MKDEV(_major_lcd_clear, _minor_lcd_clear);
     device_destroy(class_lcd_clear, devno);
     unregister_chrdev_region(devno, NUM_DEV_LCD);
 
@@ -443,6 +441,8 @@ static void cleanup_mod(void)
     class_destroy(class_lcd_row_10);
     class_destroy(class_lcd_row_20);
     class_destroy(class_lcd_clear);
+
+    i2c_del_driver(&i2c_lcd_driver);
 
     kfree(cdev_array);
 
