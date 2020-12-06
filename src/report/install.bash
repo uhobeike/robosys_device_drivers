@@ -1,6 +1,6 @@
 #!/bin/bash -vx
 
-sudo insmod i2c-lcd.ko
+sudo insmod 3_led.ko
 
 sudo chmod 666 /sys/bus/i2c/devices/i2c-1/new_device
 sudo echo "i2c_lcd 0x3e" > /sys/bus/i2c/devices/i2c-1/new_device
@@ -13,6 +13,7 @@ sudo chmod 666 /dev/lcd_row_10
 sudo chmod 666 /dev/lcd0_row_20
 sudo chmod 666 /dev/lcd_clear0
 sudo chmod 666 /dev/analog_read0
+sudo chmod 666 /dev/led_blink0
 
 echo > /dev/lcd_clear0
 echo -n "install" > /dev/lcd_row_10

@@ -26,13 +26,14 @@
 MODULE_AUTHOR("Tatsuhiro Ikebe");
 MODULE_DESCRIPTION("driver for 3_LED control");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("0.2.0");
+MODULE_VERSION("0.3.0");
 
 #define DRIVER_NAME "3_LED"
 
-#define NUM_DEV_TOTAL   4
+#define NUM_DEV_TOTAL   5
 #define NUM_DEV_LCD     1 //(3)
 #define NUM_DEV_ADC     1
+#define NUM_DEV_LED     1
 
 #define DEV_MAJOR 0
 #define DEV_MINOR 0
@@ -41,6 +42,7 @@ MODULE_VERSION("0.2.0");
 #define DEVNAME_LCD_20      "lcd_row2"
 #define DEVNAME_LCD_CLEAR   "lcd_clear"
 #define DEVNAME_ADC         "analog_read"
+#define DEVNAME_LED         "led_blink"
 
 static int _major_lcd_row_10 = DEV_MAJOR;
 static int _minor_lcd_row_10 = DEV_MINOR;
@@ -50,6 +52,8 @@ static int _major_lcd_clear = DEV_MAJOR;
 static int _minor_lcd_clear = DEV_MINOR;
 static int _major_adc = DEV_MAJOR;
 static int _minor_adc = DEV_MINOR;
+static int _major_led_blink = DEV_MAJOR;
+static int _minor_led_blink = DEV_MINOR;
 
 static dev_t dev;
 static struct cdev *cdev_array = NULL;
@@ -57,6 +61,7 @@ static struct class *class_lcd_row_10 = NULL;
 static struct class *class_lcd_row_20 = NULL;
 static struct class *class_lcd_clear = NULL;
 static struct class *class_adc = NULL;
+static struct class *class_led_blink = NULL;
 
 static volatile int cdev_index = 0;
 
@@ -73,6 +78,11 @@ static volatile int cdev_index = 0;
 #define MAX_BUFLEN 64
 
 int ch_show_data = 0;
+
+static int gpio[3] = {16, 20, 26};
+static volatile u32 *gpio_base = NULL;
+static char stored_value[MAX_BUFLEN];
+int gpio_number;
 
 struct i2c_lcd_device {
         struct i2c_client *client;
@@ -426,9 +436,48 @@ static ssize_t analog_read(struct file* filp, char* buf, size_t count, loff_t* p
 	return strlen(rw_buf);
 }
 
+static ssize_t led_blink(struct file* flip, const char* buf, size_t count, loff_t* pos)
+{
+	printk(KERN_INFO "uho_4");
+	char c;
+	if(copy_from_user(&c,buf,sizeof(char)))
+		return -EFAULT;
+
+	//printk(KERN_INFO "%s",stored_value);
+	if(c == '0'){
+		printk(KERN_INFO "uho_1");
+		gpio_base[10] = 1 << 26;
+	} 
+	else if(c == '1'){
+		printk(KERN_INFO "uho_2");
+		gpio_base[7] = 1 << 26;
+	} 
+	else if(c == '2'){
+		printk(KERN_INFO "uho_3");
+		gpio_base[10] = 1 << 20;
+	} 
+	else if(c == '3'){
+		gpio_base[7] = 1 << 20;
+	} 
+	
+	else if(c ==  '4'){
+		gpio_base[10] = 1 << 16;
+	} 
+	
+	else if(c == '5'){
+		gpio_base[7] = 1 << 16;
+	}
+
+	return 1;
+
+}
 static struct file_operations adc_fops = {
-	.owner = THIS_MODULE,
+	//.owner = THIS_MODULE,
 	.read = analog_read
+};
+
+static struct file_operations led_blink_fops = {
+    .write = led_blink
 };
 
 static int init_mcp(void)
@@ -456,7 +505,6 @@ static int init_mcp(void)
 		spi_unregister_driver(&mcp3204_driver);
 		return -ENODEV;
 	}
-    printk(KERN_INFO "uho_4");
 
     return 0;
 }
@@ -473,6 +521,17 @@ static void exit_mcp(void)
 		printk( KERN_INFO "mcp3204 remove error\n");
 	}
 	spi_unregister_driver(&mcp3204_driver);
+}
+
+static int init_led(void)
+{
+	gpio_base = ioremap_nocache(0x3f200000, 0xA0);
+	/*GPIO 6,25 out_put mode ON*/
+	const u32 led = gpio[gpio_number];
+	const u32 index = led/10;
+	const u32 shift = (led%10)*3;
+	const u32 mask = ~(0x7 << shift);
+	gpio_base[index] = (gpio_base[index] & mask) | (0x1 << shift);
 }
 
 static int lcd_write_10_register_dev(void)
@@ -647,12 +706,54 @@ static int adc_register_dev(void)
     return 0;
 }
 
+static int led_register_dev(void)
+{
+	int retval;
+	dev_t dev;
+	dev_t devno;
+
+	/* 空いているメジャー番号を使ってメジャー&
+	   マイナー番号をカーネルに登録する */
+	retval = alloc_chrdev_region(&dev, /* 結果を格納するdev_t構造体 */
+				     DEV_MINOR, /* ベースマイナー番号 */
+				     NUM_DEV_LED, /* デバイスの数 */
+				     DEVNAME_LED /* デバイスドライバの名前 */
+				     );
+
+	if (retval < 0) {
+		printk(KERN_ERR "alloc_chrdev_region failed.\n");
+		return retval;
+	}
+	_major_led_blink = MAJOR(dev);
+
+	/* デバイスクラスを作成する */
+	class_led_blink = class_create(THIS_MODULE, DEVNAME_LED);
+	if (IS_ERR(class_led_blink)) {
+		return PTR_ERR(class_led_blink);
+	}
+
+	devno = MKDEV(_major_led_blink, _minor_led_blink);
+    /* キャラクタデバイスとしてこのモジュールをカーネルに登録する */
+    cdev_init(&(cdev_array[cdev_index]), &led_blink_fops);
+    cdev_array[cdev_index].owner = THIS_MODULE;
+    if (cdev_add(&(cdev_array[cdev_index]), devno, 1) < 0) {
+        /* 登録に失敗した */
+        printk(KERN_ERR "cdev_add failed minor = %d\n", _minor_led_blink);
+    } else {
+        /* デバイスノードの作成 */
+        device_create(class_led_blink, NULL, devno, NULL, DEVNAME_LED "%u", _minor_led_blink);
+    }
+
+    cdev_index++;
+
+	return 0;
+}
+
 static int init_mod(void)
 {
-    printk(KERN_INFO "uho_1");
     i2c_add_driver(&i2c_lcd_driver);
     init_mcp();
-    printk(KERN_INFO "uho_2");
+	init_led();
 
     int retval;
     size_t size;
@@ -680,7 +781,6 @@ static int init_mod(void)
                DRIVER_NAME);
         return retval;
     }
-    printk(KERN_INFO "uho_3");
 
     retval = adc_register_dev();
     if (retval != 0) {
@@ -688,7 +788,14 @@ static int init_mod(void)
                DRIVER_NAME);
         return retval;
     }
-    printk(KERN_INFO "uho_5");
+
+	retval = led_register_dev();
+    if (retval != 0) {
+        printk(KERN_ALERT "%s: lcd register failed.\n",
+               DRIVER_NAME);
+        return retval;
+    }
+
     printk(KERN_INFO "%s is loaded. major:%d\n",__FILE__,MAJOR(dev));
 
     return 0;
@@ -701,7 +808,7 @@ static void cleanup_mod(void)
 
     int i;
     dev_t devno;
-    //dev_t devno_top;
+    dev_t devno_top;
 
     /* --- remove char device --- */
     for (i = 0; i < NUM_DEV_TOTAL; i++) {
@@ -728,11 +835,17 @@ static void cleanup_mod(void)
     device_destroy(class_adc, devno);
     unregister_chrdev_region(devno, NUM_DEV_ADC);
 
+	/* /dev/led_blink0 ~ 2*/
+    devno = MKDEV(_major_led_blink, _minor_led_blink);
+    device_destroy(class_led_blink, devno);
+    unregister_chrdev_region(devno, NUM_DEV_LED);
+
     /* --- remove device node --- */
     class_destroy(class_lcd_row_10);
     class_destroy(class_lcd_row_20);
     class_destroy(class_lcd_clear);
     class_destroy(class_adc);
+	class_destroy(class_led_blink);
 
     kfree(cdev_array);
 
