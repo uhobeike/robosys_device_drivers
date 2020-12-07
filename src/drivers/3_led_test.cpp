@@ -28,14 +28,14 @@ void lcd_clear()
     ofs << std::endl;
 }
 
-void lcd_write_10(string &lcd_str)
+void lcd_write_10(string lcd_str)
 {
     std::ofstream ofs(FILE_LCD_1);
     
     ofs << lcd_str;
 }
 
-void lcd_write_20(string &lcd_str)
+void lcd_write_20(string lcd_str)
 {
     std::ofstream ofs(FILE_LCD_2);
     
@@ -48,7 +48,6 @@ string analog_read()
     string str;
 
     getline(ifs, str);
-    cout << str << endl;
 
     return str;
 }
@@ -86,19 +85,31 @@ void led_control(string analog_val_str)
     if (0 <= analog_val && 
             analog_val <= led_threshold){
         led_blink(0, 0, 0);
+        lcd_clear();
+        lcd_write_10("LED: 0");
+        lcd_write_20("VAL:" + analog_val_str);
     } else if (led_threshold < analog_val && 
             analog_val <= (led_threshold * 2)){ 
         led_blink(1, 0, 0);
+        lcd_clear();
+        lcd_write_10("LED: 1");
+        lcd_write_20("VAL:" + analog_val_str);
     } else if ((led_threshold * 2) < analog_val && 
             analog_val <= (led_threshold * 3)){
         led_blink(1, 1, 0);
+        lcd_clear();
+        lcd_write_10("LED: 2");
+        lcd_write_20("VAL:" + analog_val_str);
     }
     else if ((led_threshold * 3) < analog_val && 
             analog_val <= (led_threshold * 4)){
         led_blink(1, 1, 1);
+        lcd_clear();
+        lcd_write_10("LED: 3");
+        lcd_write_20("VAL:" + analog_val_str);
     }
 
-    usleep(1000);
+    usleep(10000);
 }
 
 int main(void) 
