@@ -93,21 +93,21 @@ static const unsigned short i2c_lcd_addr[] = { LCD_I2C_ADDR, I2C_CLIENT_END };
 
 static int i2c_lcd_cleardisplay(struct i2c_client *client)
 {
-    i2c_smbus_write_byte_data( client, LCD_RS_CMD_WRITE, LCD_CLEARDISPLAY );
+    i2c_smbus_write_byte_data(client, LCD_RS_CMD_WRITE, LCD_CLEARDISPLAY);
     usleep_range(1080, 2000);
     
     return 0;
 }
 
-static int i2c_lcd_puts(struct i2c_client *client, char *str )
+static int i2c_lcd_puts(struct i2c_client *client, char *str)
 {
-    i2c_smbus_write_i2c_block_data( client, LCD_RS_DATA_WRITE, strlen(str), (unsigned char *)str );
+    i2c_smbus_write_i2c_block_data(client, LCD_RS_DATA_WRITE, strlen(str), (unsigned char *)str);
     usleep_range(26,100);
     
     return 0;
 }
 
-static int i2c_lcd_setcursor(struct i2c_client *client, int col, int row )
+static int i2c_lcd_setcursor(struct i2c_client *client, int col, int row)
 {
     int row_offs[] = { 0x00, 0x40, 0x14, 0x54 };
     
@@ -117,7 +117,7 @@ static int i2c_lcd_setcursor(struct i2c_client *client, int col, int row )
     return 0;
 }
 
-static int lcd_row1_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
+static int lcd_row1_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
     char str[LCD_COLS+1];
     int size = strlen( buf );
@@ -133,7 +133,7 @@ static int lcd_row1_store(struct device *dev, struct device_attribute *attr, con
 }
 static DEVICE_ATTR(lcd_row1, S_IWUSR|S_IWGRP , NULL, lcd_row1_store );
 
-static int lcd_row2_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
+static int lcd_row2_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
     char str[LCD_COLS+1];
     int size = strlen( buf );
@@ -147,7 +147,7 @@ static int lcd_row2_store(struct device *dev, struct device_attribute *attr, con
     
     return size;
 }
-static DEVICE_ATTR(lcd_row2, S_IWUSR|S_IWGRP , NULL, lcd_row2_store );
+static DEVICE_ATTR(lcd_row2, S_IWUSR|S_IWGRP , NULL, lcd_row2_store);
 
 static int lcd_clear_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -158,7 +158,7 @@ static int lcd_clear_store(struct device *dev, struct device_attribute *attr, co
     
     return size;
 }
-static DEVICE_ATTR(lcd_clear, S_IWUSR|S_IWGRP , NULL, lcd_clear_store );
+static DEVICE_ATTR(lcd_clear, S_IWUSR|S_IWGRP , NULL, lcd_clear_store);
 
 static int i2c_lcd_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
