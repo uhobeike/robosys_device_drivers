@@ -17,7 +17,7 @@
 MODULE_AUTHOR("Tatsuhiro Ikebe");
 MODULE_DESCRIPTION("driver for 3_LED control");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("0.3.2");
+MODULE_VERSION("0.3.3");
 
 #define DRIVER_NAME "3_LED"
 
@@ -829,7 +829,7 @@ static int init_mod(void)
         return retval;
     }
 
-    /* /dev/led_blink0 ~ 2*/
+    /* /dev/led_blink0 ~ 2 [0: 20][1: 21][2: 26]*/
 	retval = led_register_dev();
     if (retval != 0) {
         printk(KERN_ALERT "%s: lcd register failed.\n",
@@ -876,7 +876,7 @@ static void cleanup_mod(void)
     device_destroy(class_adc, devno);
     unregister_chrdev_region(devno, NUM_DEV_ADC);
 
-	/* /dev/led_blink0 ~ 2*/
+	/* /dev/led_blink0 ~ 2 [0: 20][1: 21][2: 26]*/
     devno_top = MKDEV(_major_led_blink, _minor_led_blink);
 	for (i = 0; i < NUM_DEV_LED; i++) {
 		devno = MKDEV(_major_led_blink, _minor_led_blink + i);
