@@ -14,6 +14,8 @@ sudo chmod 666 /dev/lcd0_row_20
 sudo chmod 666 /dev/lcd_clear0
 sudo chmod 666 /dev/analog_read0
 sudo chmod 666 /dev/led_blink0
+sudo chmod 666 /dev/led_blink1
+sudo chmod 666 /dev/led_blink2
 
 echo > /dev/lcd_clear0
 echo -n "install" > /dev/lcd_row_10
