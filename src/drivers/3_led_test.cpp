@@ -122,5 +122,6 @@ int main(void)
     while (true){
         led_control(analog_read());
     }
+    
     return 0;
 }
