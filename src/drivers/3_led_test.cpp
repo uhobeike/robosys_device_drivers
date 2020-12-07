@@ -11,9 +11,11 @@
 #define FILE_LED_BLINK1     "/dev/led_blink1"
 #define FILE_LED_BLINK2     "/dev/led_blink2"
 
-#define BUFF_SIZE 256
+#define ANALOG_RESOLUTION_MIN 0
+#define ANALOG_RESOLUTION_MAX 4096
 
 using std::string;
+using std::stoi;
 using std::ifstream;
 using std::ofstream;
 using std::cout;
@@ -26,7 +28,7 @@ void lcd_clear()
     ofs << std::endl;
 }
 
-void lcd_write_10(string lcd_str)
+void lcd_write_10(string &lcd_str)
 {
     std::ofstream ofs(FILE_LCD_1);
     
@@ -76,16 +78,38 @@ void led_blink(char status_0, char status_1, char status_2)
     }
 }
 
+void led_control(string analog_val_str)
+{
+    int analog_val = stoi(analog_val_str);
+    int led_threshold = ANALOG_RESOLUTION_MAX / 5;
+    
+    if (0 <= analog_val && 
+            analog_val <= led_threshold){
+        led_blink(0, 0, 0);
+    } else if (led_threshold < analog_val && 
+            analog_val <= (led_threshold * 2)){ 
+        led_blink(1, 0, 0);
+    } else if ((led_threshold * 2) < analog_val && 
+            analog_val <= (led_threshold * 3)){
+        led_blink(1, 1, 0);
+    }
+    else if ((led_threshold * 3) < analog_val && 
+            analog_val <= (led_threshold * 4)){
+        led_blink(1, 1, 1);
+    }
+
+    usleep(1000);
+}
+
 int main(void) 
 {
+    string lcd_str;
+
     /* lcdの初期化*/
     lcd_clear();
 
-    analog_read();
-
-    lcd_write_10("114514");
-
-    led_blink(0, 0, 0);
-
+    while (true){
+        led_control(analog_read());
+    }
     return 0;
 }
