@@ -89,7 +89,7 @@ static const struct i2c_device_id i2c_lcd_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, i2c_lcd_id);
 
-static const unsigned short i2c_lcd_addr[] = { LCD_I2C_ADDR, I2C_CLIENT_END };
+static const unsigned short i2c_lcd_addr[] = {LCD_I2C_ADDR, I2C_CLIENT_END};
 
 static int i2c_lcd_cleardisplay(struct i2c_client *client)
 {
@@ -109,9 +109,9 @@ static int i2c_lcd_puts(struct i2c_client *client, char *str)
 
 static int i2c_lcd_setcursor(struct i2c_client *client, int col, int row)
 {
-    int row_offs[] = { 0x00, 0x40, 0x14, 0x54 };
+    int row_offs[] = {0x00, 0x40, 0x14, 0x54};
     
-    i2c_smbus_write_byte_data( client, LCD_RS_CMD_WRITE, LCD_SETDDRAMADDR | (col + row_offs[row]) );
+    i2c_smbus_write_byte_data(client, LCD_RS_CMD_WRITE, LCD_SETDDRAMADDR | (col + row_offs[row]));
     usleep_range(26,100);
     
     return 0;
@@ -120,11 +120,11 @@ static int i2c_lcd_setcursor(struct i2c_client *client, int col, int row)
 static int lcd_row1_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
     char str[LCD_COLS+1];
-    int size = strlen( buf );
+    int size = strlen(buf);
     struct i2c_lcd_device *data = (struct i2c_lcd_device *)dev_get_drvdata(dev);
     
-    i2c_lcd_setcursor(data->client, 0, 0 );
-    strncpy(str, buf, LCD_COLS );
+    i2c_lcd_setcursor(data->client, 0, 0);
+    strncpy(str, buf, LCD_COLS);
     str[LCD_COLS] = '0';
     
     i2c_lcd_puts(data->client, str);
@@ -136,11 +136,11 @@ static DEVICE_ATTR(lcd_row1, S_IWUSR|S_IWGRP , NULL, lcd_row1_store );
 static int lcd_row2_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
     char str[LCD_COLS+1];
-    int size = strlen( buf );
+    int size = strlen(buf);
     struct i2c_lcd_device *data = (struct i2c_lcd_device *)dev_get_drvdata(dev);
     
-    i2c_lcd_setcursor(data->client, 0, 1 );
-    strncpy( str, buf, LCD_COLS );
+    i2c_lcd_setcursor(data->client, 0, 1);
+    strncpy(str, buf, LCD_COLS);
     str[LCD_COLS] = '0';
     
     i2c_lcd_puts(data->client, str);
@@ -151,7 +151,7 @@ static DEVICE_ATTR(lcd_row2, S_IWUSR|S_IWGRP , NULL, lcd_row2_store);
 
 static int lcd_clear_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
-    int size = strlen( buf );
+    int size = strlen(buf);
     struct i2c_lcd_device *data = (struct i2c_lcd_device *)dev_get_drvdata(dev);
     
     i2c_lcd_cleardisplay(data->client);
@@ -175,13 +175,13 @@ static int i2c_lcd_probe(struct i2c_client *client, const struct i2c_device_id *
     }
     
     /* LCDの初期化 */
-    ret = i2c_smbus_write_byte_data( client, LCD_RS_CMD_WRITE, LCD_FUNCTIONSET | LCD_FUNC_8BITMODE | LCD_FUNC_2LINE);
+    ret = i2c_smbus_write_byte_data(client, LCD_RS_CMD_WRITE, LCD_FUNCTIONSET | LCD_FUNC_8BITMODE | LCD_FUNC_2LINE);
     if( ret < 0 ) {
         printk(KERN_ERR "%s: Could not write first function set to i2c lcd device\n", __func__);
         return -ENODEV;
     }
     usleep_range(27, 100);
-    i2c_smbus_write_byte_data( client, LCD_RS_CMD_WRITE, LCD_FUNCTIONSET | LCD_FUNC_8BITMODE | LCD_FUNC_2LINE | LCD_FUNC_INSTABLE );
+    i2c_smbus_write_byte_data(client, LCD_RS_CMD_WRITE, LCD_FUNCTIONSET | LCD_FUNC_8BITMODE | LCD_FUNC_2LINE | LCD_FUNC_INSTABLE);
     usleep_range(27, 100);
     
     data[0] = LCD_IS_OSC | LCD_OSC_FREQ;
@@ -196,17 +196,12 @@ static int i2c_lcd_probe(struct i2c_client *client, const struct i2c_device_id *
     }
     msleep(200);
     
-    i2c_smbus_write_byte_data( client, LCD_RS_CMD_WRITE, LCD_DISPLAYCONTROL | LCD_DISP_ON );
+    i2c_smbus_write_byte_data(client, LCD_RS_CMD_WRITE, LCD_DISPLAYCONTROL | LCD_DISP_ON);
     usleep_range(27, 100);
-    i2c_smbus_write_byte_data( client, LCD_RS_CMD_WRITE, LCD_ENTRYMODESET | LCD_ENTRYLEFT);
+    i2c_smbus_write_byte_data(client, LCD_RS_CMD_WRITE, LCD_ENTRYMODESET | LCD_ENTRYLEFT);
     usleep_range(27, 100);
 
-    printk(KERN_INFO "2");
     i2c_lcd_cleardisplay(client);
-    i2c_lcd_setcursor(client, 0,0);
-    i2c_lcd_puts(client, "Hello,123");
-    i2c_lcd_setcursor(client, 0,1);
-    i2c_lcd_puts(client, "RasPi");
     
     dev = kzalloc(sizeof(struct i2c_lcd_device), GFP_KERNEL);
     if (dev == NULL) {
@@ -217,19 +212,19 @@ static int i2c_lcd_probe(struct i2c_client *client, const struct i2c_device_id *
     dev->client = client;
     i2c_set_clientdata(client, dev);
     
-    ret = device_create_file( &client->dev, &dev_attr_lcd_row1 );
+    ret = device_create_file(&client->dev, &dev_attr_lcd_row1);
     if(ret) {
-        printk(KERN_ERR "failed to add lcd_row1 attribute\n" );
+        printk(KERN_ERR "failed to add lcd_row1 attribute\n");
     }
     
-    ret = device_create_file( &client->dev, &dev_attr_lcd_row2 );
+    ret = device_create_file(&client->dev, &dev_attr_lcd_row2);
     if(ret) {
-        printk(KERN_ERR "failed to add lcd_row2 attribute\n" );
+        printk(KERN_ERR "failed to add lcd_row2 attribute\n");
     }
     
-    ret = device_create_file( &client->dev, &dev_attr_lcd_clear );
+    ret = device_create_file(&client->dev, &dev_attr_lcd_clear);
     if(ret) {
-        printk(KERN_ERR "failed to add lcd_clear attribute\n" );
+        printk(KERN_ERR "failed to add lcd_clear attribute\n");
     }
     
     return 0;
@@ -239,11 +234,11 @@ static int i2c_lcd_remove(struct i2c_client *client)
 {
     struct i2c_lcd_device *dev;
 
-    printk( KERN_INFO "removing ... \n" );
+    printk(KERN_INFO "removing ... \n");
     
-    device_remove_file( &client->dev,  &dev_attr_lcd_row1);
-    device_remove_file( &client->dev,  &dev_attr_lcd_row2);
-    device_remove_file( &client->dev,  &dev_attr_lcd_clear);
+    device_remove_file(&client->dev, &dev_attr_lcd_row1);
+    device_remove_file(&client->dev, &dev_attr_lcd_row2);
+    device_remove_file(&client->dev, &dev_attr_lcd_clear);
     
     dev = (struct i2c_lcd_device *)i2c_get_clientdata(client);
     kfree(dev);
@@ -315,7 +310,7 @@ static unsigned int mcp3204_get_value(int channel)
     data->tx[2] = 0;
 
     if( spi_sync( data->spi, &data->msg) ) { 
-        printk(KERN_INFO "spi_sync_transfer returned non zero\n" );
+        printk(KERN_INFO "spi_sync_transfer returned non zero\n");
     }
     mutex_unlock(&data->lock);
 
@@ -340,7 +335,7 @@ static int mcp3204_probe(struct spi_device *spi)
         return -ENODEV;
     }
 
-    data = kzalloc( sizeof(struct mcp3204_drvdata), GFP_KERNEL );
+    data = kzalloc(sizeof(struct mcp3204_drvdata), GFP_KERNEL);
     if(data == NULL ) {
         printk(KERN_ERR "%s: no memory\n", __func__ );
         return -ENODEV;
@@ -355,9 +350,9 @@ static int mcp3204_probe(struct spi_device *spi)
     data->xfer.cs_change = 0;
     data->xfer.delay_usecs = 0;
     data->xfer.speed_hz = 1000000;
-    spi_message_init_with_transfers( &data->msg, &data->xfer, 1 );
+    spi_message_init_with_transfers(&data->msg, &data->xfer, 1);
 
-    spi_set_drvdata( spi, data );
+    spi_set_drvdata(spi, data);
 
     return 0;
 }
@@ -374,8 +369,8 @@ static int mcp3204_remove(struct spi_device *spi)
 }
 
 static struct spi_device_id mcp3204_id[] = {
-    { "mcp3204", 0 },
-    { },
+    {"mcp3204", 0},
+    {},
 };
 MODULE_DEVICE_TABLE(spi, mcp3204_id);
 
@@ -428,7 +423,6 @@ static int led_blink_on(int ledno)
         gpio_base[7] = (1 << LED2_BASE);
         break;
     }
-
 
     return 0;
 }
@@ -535,7 +529,7 @@ static void exit_mcp(void)
 
     master = spi_busnum_to_master(mcp3204_info.bus_num);
     if( master ) {
-        spi_remove_device(master, mcp3204_info.chip_select );
+        spi_remove_device(master, mcp3204_info.chip_select);
     }
     else {
         printk( KERN_INFO "mcp3204 remove error\n");
