@@ -61,10 +61,10 @@ static volatile int cdev_index = 0;
 #define LCD_AMP_RATIO   0x02
 #define LCD_COLS    8
 
-#define MCP320X_PACKET_SIZE    3
-#define MCP320X_DIFF        0
-#define MCP320X_SINGLE        1
-#define MCP3204_CHANNELS    4
+#define MCP320X_PACKET_SIZE     3
+#define MCP320X_DIFF            0
+#define MCP320X_SINGLE          1
+#define MCP3204_CHANNELS        4
 
 #define MAX_BUFLEN 64
 
