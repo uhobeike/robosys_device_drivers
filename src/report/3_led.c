@@ -1,32 +1,23 @@
-#include <linux/init.h>
+#include <linux/cdev.h>
 #include <linux/delay.h> 
 #include <linux/device.h>
-#include <linux/kernel.h> 
-#include <linux/mutex.h> 
-#include <linux/module.h> 
-#include <linux/slab.h> 
-#include <linux/i2c.h> 
-#include <linux/string.h>
-#include "i2c-lcd.h"
-
 #include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/uaccess.h>
-#include <linux/io.h>
-
 #include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/mutex.h>
-#include <linux/spi/spi.h>
-#include <linux/slab.h>
+#include <linux/io.h>
+#include <linux/i2c.h> 
+#include <linux/kernel.h> 
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/slab.h> 
+#include <linux/spi/spi.h>
+#include <linux/string.h>
+#include <linux/uaccess.h>
+#include "i2c-lcd.h"
 
 MODULE_AUTHOR("Tatsuhiro Ikebe");
 MODULE_DESCRIPTION("driver for 3_LED control");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("0.3.1");
+MODULE_VERSION("0.3.2");
 
 #define DRIVER_NAME "3_LED"
 
@@ -88,13 +79,13 @@ static volatile u32 *gpio_base = NULL;
 
 
 struct i2c_lcd_device {
-        struct i2c_client *client;
+    struct i2c_client *client;
 };
 
 static int contrast = 56;
 
 static const struct i2c_device_id i2c_lcd_id[] = {
-        { "i2c_lcd", 0 },{}
+    { "i2c_lcd", 0 },{}
 };
 MODULE_DEVICE_TABLE(i2c, i2c_lcd_id);
 
@@ -110,7 +101,6 @@ static int i2c_lcd_cleardisplay(struct i2c_client *client)
 
 static int i2c_lcd_puts(struct i2c_client *client, char *str )
 {
-    printk(KERN_INFO "6");
     i2c_smbus_write_i2c_block_data( client, LCD_RS_DATA_WRITE, strlen(str), (unsigned char *)str );
     usleep_range(26,100);
     
@@ -127,7 +117,7 @@ static int i2c_lcd_setcursor(struct i2c_client *client, int col, int row )
     return 0;
 }
 
-static int lcd_row1_store( struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
+static int lcd_row1_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
 {
     char str[LCD_COLS+1];
     int size = strlen( buf );
@@ -143,7 +133,7 @@ static int lcd_row1_store( struct device *dev, struct device_attribute *attr, co
 }
 static DEVICE_ATTR(lcd_row1, S_IWUSR|S_IWGRP , NULL, lcd_row1_store );
 
-static int lcd_row2_store( struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
+static int lcd_row2_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count )
 {
     char str[LCD_COLS+1];
     int size = strlen( buf );
@@ -159,7 +149,7 @@ static int lcd_row2_store( struct device *dev, struct device_attribute *attr, co
 }
 static DEVICE_ATTR(lcd_row2, S_IWUSR|S_IWGRP , NULL, lcd_row2_store );
 
-static int lcd_clear_store( struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+static int lcd_clear_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
     int size = strlen( buf );
     struct i2c_lcd_device *data = (struct i2c_lcd_device *)dev_get_drvdata(dev);
@@ -169,11 +159,6 @@ static int lcd_clear_store( struct device *dev, struct device_attribute *attr, c
     return size;
 }
 static DEVICE_ATTR(lcd_clear, S_IWUSR|S_IWGRP , NULL, lcd_clear_store );
-
-
-static struct file_operations lcd_fops = {
-    .owner = THIS_MODULE
-};
 
 static int i2c_lcd_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
@@ -303,8 +288,7 @@ static int spi_chip_select = 0;
 module_param( spi_bus_num, int, S_IRUSR | S_IRGRP | S_IROTH |  S_IWUSR );
 module_param( spi_chip_select, int, S_IRUSR | S_IRGRP | S_IROTH |  S_IWUSR );
 
-
-static unsigned int mcp3204_get_value( int channel )
+static unsigned int mcp3204_get_value(int channel)
 {
 
 	struct device *dev;
@@ -433,7 +417,6 @@ static int rpi_gpio_function_set(int pin, uint32_t func)
 
 static int led_blink_on(int ledno)
 {
-    printk(KERN_INFO "on");
 	switch (ledno) {
     case 0:
         gpio_base[7] = (1 << LED0_BASE);
@@ -452,7 +435,6 @@ static int led_blink_on(int ledno)
 
 static int led_blink_off(int ledno)
 {
-    printk(KERN_INFO "off");
 	switch (ledno) {
 	case 0:
 		gpio_base[10] = (1 << LED0_BASE);
@@ -485,8 +467,6 @@ static ssize_t analog_read(struct file* filp, char* buf, size_t count, loff_t* p
 
 	snprintf(rw_buf, sizeof(rw_buf), "%d\n", mcp3204_get_value(0));
 	
-	printk(KERN_INFO "%d",mcp3204_get_value(0));
-
 	if(copy_to_user((void *)buf, &rw_buf, strlen(rw_buf))){
 		return -EFAULT;
 	}
@@ -498,7 +478,6 @@ static ssize_t analog_read(struct file* filp, char* buf, size_t count, loff_t* p
 
 static ssize_t led_blink(struct file* flip, const char* buf, size_t count, loff_t* pos)
 {
-    printk(KERN_INFO "start");
 	char cval;
 	int ret;
 	int minor = *((int *)flip->private_data);
@@ -510,16 +489,13 @@ static ssize_t led_blink(struct file* flip, const char* buf, size_t count, loff_
 		switch (cval) {
 		case '1':
 			ret = led_blink_on(minor);
-            printk(KERN_INFO "1b");
 			break;
 		case '0':
-        printk(KERN_INFO "b0");
 			ret = led_blink_off(minor);
 			break;
 		}
 		return sizeof(char);
 	}
-    printk(KERN_INFO "exit_b");
 
 	return 0;
 }
@@ -575,6 +551,10 @@ static int init_led(void)
 	rpi_gpio_function_set(LED1_BASE, RPI_GPF_OUTPUT);
 	rpi_gpio_function_set(LED2_BASE, RPI_GPF_OUTPUT);
 }
+
+static struct file_operations lcd_fops = {
+    .owner = THIS_MODULE
+};
 
 static struct file_operations adc_fops = {
 	.read = analog_read
@@ -912,8 +892,6 @@ static void cleanup_mod(void)
 	class_destroy(class_led_blink);
 
     kfree(cdev_array);
-
-    printk(KERN_INFO "exit");
 }
 
 module_init(init_mod);
