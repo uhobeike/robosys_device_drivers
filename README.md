@@ -35,13 +35,14 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 
 
 ## 回路構成
-#### 使用した電子部品（おおまか）
+#### 使用した電子部品
 | 電子部品名                                           | 電子部品情報                                  | 
 | ---------------------------------------------------- | --------------------------------------------- | 
 | 12bit 4ch AD コンバータ MCP3204-BI/P                 | https://akizukidenshi.com/catalog/g/gI-00239/ | 
 | I2C接続小型LCDモジュール(8×2行) ピッチ変換モジュール | https://akizukidenshi.com/catalog/g/gM-09109/ | 
 | 半固定ボリューム 100Ω                               | https://akizukidenshi.com/catalog/g/gP-06099/ | 
 | 高輝度5mm赤LED OSR5MA511A-VW                         | https://akizukidenshi.com/catalog/g/gI-02423/ | 
+| カーボン抵抗 (1/4W) 1kΩ                                  |https://akizukidenshi.com/catalog/g/gR-25102/|
 <table>
 <th>イラスト</th>
 <th>実物</th>
