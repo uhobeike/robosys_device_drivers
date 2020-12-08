@@ -42,6 +42,15 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 | I2C接続小型LCDモジュール(8×2行) ピッチ変換モジュール | https://akizukidenshi.com/catalog/g/gM-09109/ | 
 | 半固定ボリューム 100Ω                               | https://akizukidenshi.com/catalog/g/gP-06099/ | 
 | 高輝度5mm赤LED OSR5MA511A-VW                         | https://akizukidenshi.com/catalog/g/gI-02423/ | 
+<table>
+<th>イラスト</th>
+<th>実物</th>
+<tr>
+<td><img width="700" src="https://github.com/uhobeike/robosys_device_drivers/blob/image/robosys.png"></td>
+<td><img width="700" src="https://github.com/uhobeike/robosys_device_drivers/blob/image/robosysy_circuit.jpg"></td>
+</tr>
+</table>
+
 
 ## ソースコード一覧
 | ソースコード名  | 役割                                         | 
