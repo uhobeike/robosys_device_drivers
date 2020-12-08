@@ -5,12 +5,12 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 #### ハードウェア
 ・Raspberry Pi 3B+
 
-・ノートPC
+・thinkpad p43s
 
 #### ソフトウェア
 ・Raspberry Pi 3B+（ubuntu 18.04 server）
 
-・ノートPC（ubuntu 18.04 desktop）
+・thinkpad p43s（ubuntu 18.04 desktop）
 
 ## インストール & ビルド
 #### Raspberry Pi 3B+
