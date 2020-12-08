@@ -35,6 +35,13 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 
 
 ## 回路構成
+#### 使用した電子部品（おおまか）
+| 電子部品名                                           | 電子部品情報                                  | 
+| ---------------------------------------------------- | --------------------------------------------- | 
+| 12bit 4ch AD コンバータ MCP3204-BI/P                 | https://akizukidenshi.com/catalog/g/gI-00239/ | 
+| I2C接続小型LCDモジュール(8×2行) ピッチ変換モジュール | https://akizukidenshi.com/catalog/g/gM-09109/ | 
+| 半固定ボリューム 100Ω                               | https://akizukidenshi.com/catalog/g/gP-06099/ | 
+| 高輝度5mm赤LED OSR5MA511A-VW                         | https://akizukidenshi.com/catalog/g/gI-02423/ | 
 
 ## ソースコード一覧
 | ソースコード名  | 役割                                         | 
@@ -51,12 +58,14 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 | /dev/lcd_row_10    | lcdの一行目に出力                         | 
 | /dev/lcd_row_20    | lcdの二行目に出力                         | 
 | /dev/lcd_clear0    | lcdに出力されているものすべて削除         | 
-| /dev/analog_read0  | MCP3204の1chに繋がっているADC変換値を読む | 
+| /dev/analog_read0  | MCP3204の1chに繋がっているAD変換値を読む | 
 | /dev/led_blink0    | GPIO20に繋がっているLEDの点滅             | 
 | /dev/led_blink1    | GPIO21に繋がっているLEDの点滅             | 
 | /dev/led_blink2    | GPIO26に繋がっているLEDの点滅             | 
 ## 参考元
 ・https://github.com/rt-net/RaspberryPiMouse
+
+・https://qiita.com/iwatake2222/items/26d5f7f4894ccc4ce227
 
 ・https://qiita.com/iwatake2222/items/dbc544864f0e9873270a
 
