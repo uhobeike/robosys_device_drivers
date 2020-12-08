@@ -28,10 +28,12 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 ```
 
 ## 実行結果
-#### robosys_device_drivers_2020
-[![](https://github.com/uhobeike/robosys_device_drivers/blob/image/robosys_device_drivers_2020.png)](https://youtu.be/JrrdK_rhAd8 "")
-#### robosys_device_drivers_2020 (lcd_control)
-[![](https://github.com/uhobeike/robosys_device_drivers/blob/image/810.png)](https://youtu.be/Y0zuZoEhaN8 "")
+#### robosys_device_drivers_2020    robosys_device_drivers_2020 (lcd_control)
+
+|lcd & led control|lcd only control|
+|---|---|
+|[![robosys 2020](https://img.youtube.com/vi/JrrdK_rhAd8/0.jpg)](https://www.youtube.com/watch?v=JrrdK_rhAd8)|[![robosys 2020 lcd_control](https://img.youtube.com/vi/Y0zuZoEhaN8/0.jpg)](https://www.youtube.com/watch?v=Y0zuZoEhaN8)|
+
 
 ## 回路構成
 
