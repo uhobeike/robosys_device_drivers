@@ -31,7 +31,7 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 #### 画像をクリックすると、youtubeサイトに飛べます。
 |lcd & led control|lcd only control|
 |---|---|
-|[![robosys 2020](https://img.youtube.com/vi/JrrdK_rhAd8/0.jpg)](https://www.youtube.com/watch?v=JrrdK_rhAd8)|[![robosys 2020 lcd_control](https://img.youtube.com/vi/Y0zuZoEhaN8/0.jpg)](https://www.youtube.com/watch?v=Y0zuZoEhaN8)|
+|[![robosys 2020](https://img.youtube.com/vi/JrrdK_rhAd8/0.jpg)](https://youtu.be/R0aPI4W8ze8)|[![robosys 2020 lcd_control](https://img.youtube.com/vi/Y0zuZoEhaN8/0.jpg)](https://www.youtube.com/watch?v=Y0zuZoEhaN8)|
 
 
 ## 回路構成
