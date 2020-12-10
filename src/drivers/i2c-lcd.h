@@ -47,8 +47,8 @@
 #define LCD_IS_FOLLOWER     0x60
 #define LCD_IS_FOLLOWER_ON  0x08
 
-#define contrast_upper(x)	((x >> 4) & 0x03)
-#define contrast_lower(x)	(x & 0x0F)
+#define contrast_upper(x)   ((x >> 4) & 0x03)
+#define contrast_lower(x)   (x & 0x0F)
 
 
 #endif
