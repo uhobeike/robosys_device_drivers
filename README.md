@@ -21,12 +21,14 @@ Raspberry Pi 3B+に接続した可変抵抗により、3つのLEDおよびLCDの
 ~/robosys_device_drivers/src/drivers$ ./install.bash
 ~/robosys_device_drivers/src/drivers$ g++ -o test 3_led_test.cpp
 ```
-
 ## 実行方法
 ```
 ~/robosys_device_drivers/src/drivers$ ./test
 ```
-
+## アンインストール
+```
+~$ sudo rmmmod 3_led
+```
 ## 実行結果
 #### 画像をクリックすると、youtubeサイトに飛べます。
 |lcd & led control|lcd only control|
